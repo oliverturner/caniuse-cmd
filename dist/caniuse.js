@@ -151,9 +151,7 @@ ${resultmap.w}  Caniuse data is more than 30 days out of date!
 }
 
 if (argv.web) {
-  return open(
-    `http://caniuse.com/#search=${encodeURIComponent(argv._.join(" "))}`
-  );
+  open(`http://caniuse.com/#search=${encodeURIComponent(argv._.join(" "))}`);
 }
 
 const searchkey = argv._.join("")
@@ -347,9 +345,11 @@ const showFeature = function(result, opts) {
         results[0].version = null;
       }
 
-      for (let res of Array.from(results)) {
-        out.push(`${makeResult(res, need_note)}`);
-      }
+      // for (let res of Array.from(results)) {
+      //   out.push(`${makeResult(res, need_note)}`);
+      // }
+      results.forEach(res => out.push(`${makeResult(res, need_note)}`));
+
       if (!opts.short) {
         out.push("\n");
       }
@@ -388,19 +388,25 @@ const slowFind = function(query) {
 };
 
 (function() {
-  let feat, features;
-  if ((feat = data.data[searchkey])) {
+  const feat = data.data[searchkey];
+  const features = slowFind(searchkey);
+
+  if (feat) {
     return showFeature(feat, argv);
-  } else if ((features = slowFind(searchkey)).length > 0) {
+  } else if (features.length > 0) {
     if (argv.short == null) {
       argv.short = features.length > 1;
     }
+
     return (() => {
-      const result = [];
-      for (feat of Array.from(features)) {
-        result.push(showFeature(data.data[feat], argv));
-      }
-      return result;
+      // const result = [];
+      // for (feat of Array.from(features)) {
+      //   result.push(showFeature(data.data[feat], argv));
+      // }
+
+      // return result;
+
+      return features.map(feat => showFeature(data.data[feat], argv))
     })();
   } else {
     return console.error(`${searchkey}: not found`);

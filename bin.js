@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-require('./caniuse.js');
+require('./dist/caniuse.js');
