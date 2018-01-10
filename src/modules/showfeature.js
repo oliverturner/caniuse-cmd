@@ -25,7 +25,7 @@ const filter = function(browser, opts, agents, types) {
   return types.includes(agents[browser].type);
 };
 
-function getPercs(resultMap, result) {
+function getPercentages(resultMap, result) {
   const { a, y } = resultMap;
   const { usage_perc_a, usage_perc_y } = result;
 
@@ -61,7 +61,7 @@ function showFeature(
   } = result;
   const resStatus = opts.long ? ` [${statuses[status]}]` : "";
   const headerSep = opts["oneline-browser"] ? ": " : "\n";
-  const percentages = getPercs(resultMap, result);
+  const percentages = getPercentages(resultMap, result);
   const out = [];
 
   if (opts.long == null) opts.long = !opts.short;
@@ -80,9 +80,9 @@ function showFeature(
   if (opts.short && !opts["oneline-browser"]) out.push("\t");
 
   // Store which notes have been used in a result
-  const need_note = {};
+  const browserNotes = {};
 
-  for (let browser in stats) {
+  Object.keys(stats).forEach(browser => {
     const browserStats = stats[browser];
 
     if (filter(browser, opts, agents, types)) {
@@ -98,7 +98,7 @@ function showFeature(
 
       results.forEach(res =>
         out.push(
-          `${makeResult(res, resultMap, percentages, superNums, need_note)}`
+          `${makeResult(res, resultMap, percentages, superNums, browserNotes)}`
         )
       );
 
@@ -106,17 +106,17 @@ function showFeature(
         out.push("\n");
       }
     }
-  }
+  });
 
   console.log(wrap(out.join("")));
 
   if (!opts.short) {
-    for (let num in notes_by_num) {
-      const note = notes_by_num[num];
-      if (need_note[num]) {
+    Object.keys(notes_by_num).forEach(num => {
+      if (browserNotes[num]) {
+        const note = notes_by_num[num];
         console.log(wrap(`\t\t${superNums[num].yellow}${note}`));
       }
-    }
+    });
 
     if (notes) {
       console.log(

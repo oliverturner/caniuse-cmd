@@ -6,7 +6,7 @@ function __guard__(value, transform) {
 
 // Generate the text for a single version result
 // FIXME: gross output parameter
-function makeResult(result, resultMap, percentages, superNums, nums = {}) {
+function makeResult(result, resultMap, percentages, superNums, notes = {}) {
   const { support, version, usage } = result;
   const level = support[0];
   const note = __guard__(support.match(/#(\d+)/), x => x[1]);
@@ -20,7 +20,7 @@ function makeResult(result, resultMap, percentages, superNums, nums = {}) {
   if (version) out += version;
   if (support.includes("x")) out += "ᵖ";
   if (note) {
-    nums[note] = true;
+    notes[note] = true;
     out += superNums[note];
   }
 
