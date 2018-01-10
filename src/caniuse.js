@@ -10,10 +10,14 @@
  * DS209: Avoid top-level return
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-// const colors = require("colors");
+
 const open = require("open");
 const os = require("os");
+require("colors");
 
+const getResultMap = require("./modules/get-resultmap");
+const showFeature = require("./modules/showfeature");
+const slowFind = require("./modules/slowfind");
 const {
   argv,
   outdated,
@@ -22,9 +26,6 @@ const {
   statuses,
   eras
 } = require("./modules/config");
-const getResultMap = require("./modules/get-resultmap");
-const showFeature = require("./modules/showfeature");
-const slowFind = require("./modules/slowfind");
 
 const currentVersion = eras.indexOf("e0");
 const versionrange = [0, currentVersion];
@@ -63,19 +64,27 @@ if (argv.future) versionrange[1] = Infinity;
 if (argv.current) versionrange[0] = currentVersion;
 if (argv.era) versionrange[0] = eras.indexOf(argv.era);
 
-(function() {
-  const feat = data[searchkey];
-  const features = slowFind(data, searchkey);
+function getFeatureData(featureData, opts) {
+  showFeature(
+    versionrange,
+    agents,
+    types,
+    statuses,
+    resultMap,
+    featureData,
+    opts
+  );
+}
 
-  if (feat) {
-    return showFeature(versionrange, agents, types, statuses, resultMap, feat, argv);
-  } else if (features.length > 0) {
-    if (argv.short == null) argv.short = features.length > 1;
+const feature = data[searchkey];
+const features = slowFind(data, searchkey);
 
-    return features.map(feat =>
-      showFeature(versionrange, agents, types, statuses, resultMap, data[feat], argv)
-    );
-  } else {
-    return console.error(`${searchkey}: not found`);
-  }
-})();
+if (feature) {
+  getFeatureData(feature, argv);
+} else if (features.length > 0) {
+  if (argv.short == null) argv.short = features.length > 1;
+
+  features.forEach(feat => getFeatureData(data[feat], argv));
+} else {
+  console.error(`${searchkey}: not found`);
+}

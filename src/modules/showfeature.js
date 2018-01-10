@@ -1,3 +1,4 @@
+require("colors");
 const linewrap = require("linewrap");
 
 const makeResults = require("./makeresults");
@@ -24,36 +25,55 @@ const filter = function(browser, opts, agents, types) {
   return types.includes(agents[browser].type);
 };
 
+function getPercs(resultMap, result) {
+  const { a, y } = resultMap;
+  const { usage_perc_a, usage_perc_y } = result;
+
+  const percs = [];
+  if (usage_perc_y) {
+    percs.push(`${y} ${usage_perc_y}%`.green);
+  }
+  if (usage_perc_a) {
+    percs.push(`${a} ${usage_perc_a}%`.yellow);
+  }
+
+  return percs.join(" ");
+}
+
 // Display a single feature's browser support
-function showFeature(versionrange, agents, types, statuses, resultMap, result, opts = {}) {
-  // const {usage_perc_y, usage_perc_a, status, stats, categories, description} = result;
-  const status = opts.long ? ` [${statuses[result.status]}]` : "";
+function showFeature(
+  versionrange,
+  agents,
+  types,
+  statuses,
+  resultMap,
+  result,
+  opts = {}
+) {
+  const {
+    status,
+    title,
+    stats,
+    categories,
+    description,
+    notes,
+    notes_by_num
+  } = result;
+  const resStatus = opts.long ? ` [${statuses[status]}]` : "";
   const headerSep = opts["oneline-browser"] ? ": " : "\n";
+  const percentages = getPercs(resultMap, result);
   const out = [];
-  let percentages = [];
 
   if (opts.long == null) opts.long = !opts.short;
   if (opts.short == null) opts.short = !opts.long;
 
-  if (result.usage_perc_y) {
-    percentages.push(resultMap.y + ` ${result.usage_perc_y}%`.green);
-  }
-  if (result.usage_perc_a) {
-    percentages.push(resultMap.a + ` ${result.usage_perc_a}%`.yellow);
-  }
-  percentages = percentages.join(" ");
-
-  process.stdout.write(
-    `${result.title.bold} ${percentages}${status}` + headerSep
-  );
+  process.stdout.write(`${title.bold} ${percentages}${resStatus} ${headerSep}`);
 
   if (opts.oneline) return;
 
   if (opts.long) {
-    const tags = result.categories
-      .map(x => `#${x.replace(/\W/g, "")}`)
-      .join(" ");
-    console.log(wrap(`\t${result.description.trim()} ${tags}\n`));
+    const tags = categories.map(x => `#${x.replace(/\W/g, "")}`).join(" ");
+    console.log(wrap(`\t${description.trim()} ${tags}\n`));
   }
 
   // console.log "columns", process.stdout.columns
@@ -62,11 +82,12 @@ function showFeature(versionrange, agents, types, statuses, resultMap, result, o
   // Store which notes have been used in a result
   const need_note = {};
 
-  for (let browser in result.stats) {
-    const stats = result.stats[browser];
+  for (let browser in stats) {
+    const browserStats = stats[browser];
 
     if (filter(browser, opts, agents, types)) {
-      const results = makeResults(agents[browser], stats, versionrange);
+      const results = makeResults(agents[browser], browserStats, versionrange);
+
       if (results.length === 1) results[0].version = null;
 
       if (!opts.short) out.push("\t");
@@ -76,7 +97,9 @@ function showFeature(versionrange, agents, types, statuses, resultMap, result, o
         : out.push(`${agents[browser].browser} `);
 
       results.forEach(res =>
-        out.push(`${makeResult(res, resultMap, superNums, need_note)}`)
+        out.push(
+          `${makeResult(res, resultMap, percentages, superNums, need_note)}`
+        )
       );
 
       if (!opts.short) {
@@ -88,15 +111,16 @@ function showFeature(versionrange, agents, types, statuses, resultMap, result, o
   console.log(wrap(out.join("")));
 
   if (!opts.short) {
-    for (let num in result.notes_by_num) {
-      const note = result.notes_by_num[num];
+    for (let num in notes_by_num) {
+      const note = notes_by_num[num];
       if (need_note[num]) {
         console.log(wrap(`\t\t${superNums[num].yellow}${note}`));
       }
     }
-    if (result.notes) {
-      return console.log(
-        wrap(`\t ${resultMap.i}${`  ${result.notes.replace(/[\r\n]+/g, " ")}`}`)
+
+    if (notes) {
+      console.log(
+        wrap(`\t ${resultMap.i}${`  ${notes.replace(/[\r\n]+/g, " ")}`}`)
       );
     }
   }
